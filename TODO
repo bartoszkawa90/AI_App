@@ -1,8 +1,9 @@
 #TODO
+!!! Rather consider Closing prices in medium range (Few months)
 
-Ready: Collecting data by using some ready lib
+Ready: Collecting data by using some ready lib (yfinance)
 
-Aktualnie : Download all data
+Aktualnie : Downloading data works but arrange columns in .csv like in static/chart.csv
 
 
 Database - when will be some data to be stored

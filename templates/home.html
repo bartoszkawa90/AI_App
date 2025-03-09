@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple WebApp</title>
     <link rel="stylesheet" href="static/home_styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -20,6 +22,69 @@
     <main class="content">
         <h1>Welcome to MyWebApp</h1>
         <p>This is a simple web application interface with a navigation bar.</p>
+
+        <!-- Adjust the width and height attributes to make the chart smaller -->
+        <canvas id="myChart" width="300" height="120"></canvas>
     </main>
+
+    <script>
+        function loadCSVAndRenderChart() {
+            Papa.parse("static/chart.csv", {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    console.log('CSV Results:', results);
+                    const labels = [];
+                    const values = [];
+
+                    results.data.forEach(row => {
+                        if (row.Date && row.Close) {
+                            labels.push(row.Date);
+                            values.push(parseFloat(row.Close));
+                        }
+                    });
+
+                    console.log('Labels:', labels);
+                    console.log('Values:', values);
+
+                    const ctx = document.getElementById('myChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Close Price',
+                                data: values,
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderWidth: 2,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Date'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Close Price'
+                                    },
+                                    beginAtZero: false
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        window.onload = loadCSVAndRenderChart;
+    </script>
 </body>
 </html>

@@ -7,6 +7,7 @@ if [ -z "$1" ]; then
 fi
 
 # Set Flask environment variables
+# $1 is a name of main file without extension, for example in this case simply main
 export FLASK_APP=$1
 export FLASK_ENV=development
 

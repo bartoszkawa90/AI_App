@@ -59,9 +59,18 @@
 
 import yfinance as yf
 import pandas as pd
+from list_of_actions import stocks
 
 def data_collector(stock: str, file1: str, file2:str):
-    # Download NVIDIA (NVDA) stock data for the last 3 years with weekly intervals
+    """
+    Function for downloading data about stock prices from last 3 years, function splits data into two
+    chunks (training data and validation data), chunks are being saved into separated files
+    :param stock: Stock name
+    :param file1: File for training data (from 3yr ago to 1yr ago)
+    :param file2: File for validation data (from 1yr ago to now)
+    :return: None
+    """
+    # Download data
     stock = yf.download(stock, period="3y", interval="1wk")
 
     # Convert index to datetime (just in case)
@@ -75,10 +84,23 @@ def data_collector(stock: str, file1: str, file2:str):
     chunk_1 = stock[stock.index < one_year_ago]  # 3 years ago to 1 year ago
     chunk_2 = stock[stock.index >= one_year_ago]  # 1 year ago to now
 
+    # Save to files
     chunk_1.to_csv(file1)
     chunk_2.to_csv(file2)
 
+def extract_data(file: str, column: str) -> dict:
+    """Function for extracting data from prepared csv stock file"""
+    df = pd.read_csv(file)
+    close_data = getattr(df, column).T[2:]
+    date = getattr(df, column).T[2:]
+    a=1
+
 
 if __name__ == '__main__':
-    data_collector("NVDA", "/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/file1.csv",
-                            "/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/file2.csv")
+    for idx, stock in enumerate(stocks[:5]):
+        data_collector(stock[0], f"/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/"
+                                 f"actions_data/train/train{idx}_{stock[1]}.csv",
+                                f"/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/"
+                                f"actions_data/verify/verify{idx}_{stock[1]}.csv")
+
+    # data = extract_data('/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/actions_data/train/train0_Aon plc Class A.csv', 'Close')

@@ -1,6 +1,8 @@
 #TODO
 
-Aktualnie : Nie działa zbieranie danych z selenium więc albo inny sposób przez requesty i soup albo chat
+Ready: Collecting data by using some ready lib
+
+Aktualnie : Download all data
 
 
 Database - when will be some data to be stored

@@ -9,7 +9,7 @@ def index():
     static_path = os.path.join(app.root_path, 'static')
 
     # List only CSV files.
-    csv_files = [f for f in os.listdir(static_path) if f.endswith('.csv')]
+    csv_files = [f.split('.')[0] for f in os.listdir(static_path) if f.endswith('.csv')]
 
     # Build a list of dictionaries containing file names and their URL paths.
     file_list = [{"name": f, "url": url_for('static', filename=f)} for f in csv_files]

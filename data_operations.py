@@ -61,6 +61,7 @@ import yfinance as yf
 import pandas as pd
 from list_of_actions import stocks
 
+
 def data_collector(stock: str, file1: str, file2:str):
     """
     Function for downloading data about stock prices from last 3 years, function splits data into two
@@ -85,8 +86,12 @@ def data_collector(stock: str, file1: str, file2:str):
     chunk_2 = stock[stock.index >= one_year_ago]  # 1 year ago to now
 
     # Save to files
-    chunk_1.to_csv(file1)
-    chunk_2.to_csv(file2)
+    with open(file1, "a") as csv_1, open(file2, "a") as csv_2:
+        csv_1.write('Date,Close,High,Low,Open,Volume \n')
+        csv_2.write('Date,Close,High,Low,Open,Volume \n')
+    chunk_1.to_csv(file1, header=False, mode='a')
+    chunk_2.to_csv(file2, header=False, mode='a')
+
 
 def extract_data(file: str, column: str) -> dict:
     """Function for extracting data from prepared csv stock file"""

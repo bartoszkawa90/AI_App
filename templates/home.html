@@ -87,7 +87,7 @@
     <div class="left-block">
       <div class="logo">AI App</div>
       <div class="select-container">
-        <label for="csvFileSelect">Choose a CSV file:</label>
+        <label for="csvFileSelect">Choose stock:</label>
         <select id="csvFileSelect">
           <option value="" selected disabled>Select a file</option>
           {% for file in csv_files %}
@@ -99,8 +99,8 @@
     <div class="right-block">
       <ul class="nav-links">
         <li><a href="#" style="font-size: 19px;">Homepage</a></li>
-        <li><a href="#" style="font-size: 19px;">Configuration</a></li>
         <li><a href="#" style="font-size: 19px;">Settings</a></li>
+        <li><a href="#" style="font-size: 19px;">Manual</a></li>
         <li><a href="#" style="font-size: 19px;">About</a></li>
       </ul>
     </div>
@@ -164,7 +164,7 @@
     }
 
     document.getElementById("csvFileSelect").addEventListener("change", function(event) {
-      const filePath = event.target.value;
+      const filePath = event.target.value + ".csv";
       if (filePath) {
         document.getElementById("myChart").style.display = "block";
         loadCSVAndRenderChart(filePath);

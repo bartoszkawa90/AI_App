@@ -76,6 +76,17 @@
       text-decoration: none;
       padding: 2px 10px; /* less vertical padding so buttons are not too high */
     }
+    /* Styling for the Update button */
+    .update-button {
+      font-size: 16px;
+      padding: 8px 12px;
+      border: 2px solid #4CAF50;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      color: #333;
+      cursor: pointer;
+      margin-left: 10px;
+    }
     /* Main content styling */
     .content {
       padding: 20px;
@@ -103,6 +114,7 @@
         <li><a href="#" style="font-size: 19px;">Manual</a></li>
         <li><a href="#" style="font-size: 19px;">About</a></li>
       </ul>
+      <button class="update-button" id="updateButton">Update</button>
     </div>
   </nav>
 
@@ -135,9 +147,10 @@
                 label: "Close Price",
                 data: values,
                 borderColor: "rgba(75, 192, 192, 1)",
-                backgroundColor: "rgba(75, 192, 192, 0.2)",
-                borderWidth: 2,
-                fill: true
+                borderWidth: 4,      // thicker line
+                tension: 0.4,        // smooth curve
+                pointRadius: 6,      // bigger datapoints
+                fill: false          // no fill under the line
               }]
             },
             options: {
@@ -163,12 +176,21 @@
       });
     }
 
+    // Load chart when a CSV file is selected
     document.getElementById("csvFileSelect").addEventListener("change", function(event) {
       const filePath = event.target.value + ".csv";
       if (filePath) {
         document.getElementById("myChart").style.display = "block";
         loadCSVAndRenderChart(filePath);
       }
+    });
+
+    // Example update button event listener to demonstrate its usage
+    document.getElementById("updateButton").addEventListener("click", function() {
+      // Here you can add logic to update the chart data
+      console.log("Update button clicked");
+      // For example, you might want to re-fetch the CSV data and update the chart
+      // loadCSVAndRenderChart(currentCSVFilePath);
     });
   </script>
 </body>

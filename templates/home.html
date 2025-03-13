@@ -16,7 +16,7 @@
     .navbar {
       display: flex;
       justify-content: space-between;
-      align-items: center; /* Center items vertically */
+      align-items: center;
       background-color: #0d6efd;
       padding: 10px 20px;
       width: 100%;
@@ -35,7 +35,6 @@
     }
     .select-container {
       margin-top: 5px;
-      /* Align the select container to the right in the left column */
       align-self: flex-end;
     }
     .select-container label {
@@ -52,7 +51,7 @@
       color: #333;
       cursor: pointer;
     }
-    /* Right column: ensure subpage buttons are centered vertically */
+    /* Right column styling */
     .right-block {
       display: flex;
       align-items: center;
@@ -64,19 +63,17 @@
       display: flex;
       gap: 15px;
     }
-    /* Make list items flex containers so their content is centered */
     .nav-links li {
       display: flex;
       align-items: center;
     }
-    /* Reduce vertical padding and adjust font size for the links */
     .nav-links li a {
       color: white;
       font-size: 19px;
       text-decoration: none;
-      padding: 2px 10px; /* less vertical padding so buttons are not too high */
+      padding: 2px 10px;
     }
-    /* Styling for the Update button */
+    /* Update button styling */
     .update-button {
       font-size: 16px;
       padding: 8px 12px;
@@ -125,6 +122,9 @@
   </main>
 
   <script>
+    // Declare a global variable to hold the chart instance.
+    let myChartInstance = null;
+
     function loadCSVAndRenderChart(filePath) {
       Papa.parse(filePath, {
         download: true,
@@ -139,7 +139,7 @@
             }
           });
           const ctx = document.getElementById("myChart").getContext("2d");
-          new Chart(ctx, {
+          myChartInstance = new Chart(ctx, {
             type: "line",
             data: {
               labels: labels,
@@ -147,10 +147,12 @@
                 label: "Close Price",
                 data: values,
                 borderColor: "rgba(75, 192, 192, 1)",
-                borderWidth: 4,      // thicker line
-                tension: 0.4,        // smooth curve
-                pointRadius: 6,      // bigger datapoints
-                fill: false          // no fill under the line
+                borderWidth: 4,     // Thicker line
+                tension: 0.4,       // Smooth (curved) line
+                pointRadius: 6,     // Bigger data points
+                // Fill the datapoints with color
+                pointBackgroundColor: "rgba(75, 192, 192, 1)",
+                fill: false         // No fill under the line
               }]
             },
             options: {
@@ -178,19 +180,71 @@
 
     // Load chart when a CSV file is selected
     document.getElementById("csvFileSelect").addEventListener("change", function(event) {
-      const filePath = event.target.value + ".csv";
+      // Use the URL provided directly from the option value.
+      const filePath = event.target.value;
       if (filePath) {
         document.getElementById("myChart").style.display = "block";
         loadCSVAndRenderChart(filePath);
       }
     });
 
-    // Example update button event listener to demonstrate its usage
+    // Attach an event listener to the Update button for updating chart data.
     document.getElementById("updateButton").addEventListener("click", function() {
-      // Here you can add logic to update the chart data
-      console.log("Update button clicked");
-      // For example, you might want to re-fetch the CSV data and update the chart
-      // loadCSVAndRenderChart(currentCSVFilePath);
+      fetch('/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          // Update existing chart if present
+          if (myChartInstance) {
+            myChartInstance.data.labels = data.labels;
+            myChartInstance.data.datasets[0].data = data.values;
+            // (Optional) update the point colors if needed:
+            myChartInstance.data.datasets[0].pointBackgroundColor = "rgba(75, 192, 192, 1)";
+            myChartInstance.update();
+          } else {
+            // Fallback: (optionally) create a new chart if one doesn't exist.
+            const ctx = document.getElementById("myChart").getContext("2d");
+            myChartInstance = new Chart(ctx, {
+              type: "line",
+              data: {
+                labels: data.labels,
+                datasets: [{
+                  label: "Close Price",
+                  data: data.values,
+                  borderColor: "rgba(75, 192, 192, 1)",
+                  borderWidth: 4,
+                  tension: 0.4,
+                  pointRadius: 6,
+                  pointBackgroundColor: "rgba(75, 192, 192, 1)",
+                  fill: false
+                }]
+              },
+              options: {
+                responsive: true,
+                scales: {
+                  x: {
+                    title: {
+                      display: true,
+                      text: "Date"
+                    }
+                  },
+                  y: {
+                    title: {
+                      display: true,
+                      text: "Close Price"
+                    },
+                    beginAtZero: false
+                  }
+                }
+              }
+            });
+          }
+        })
+        .catch(error => console.error('Error during update:', error));
     });
   </script>
 </body>

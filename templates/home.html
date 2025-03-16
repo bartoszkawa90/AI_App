@@ -88,9 +88,49 @@
     .content {
       padding: 20px;
     }
+    /* Loader overlay styles: using Flexbox to center content */
+    #loadingModal {
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.9); /* slightly more opaque */
+      display: none; /* hidden by default */
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    /* Improved spinner: bigger, thicker and faster */
+    .loader {
+      width: 80px;
+      height: 80px;
+      border: 12px solid #ccc;
+      border-top: 12px solid #0d6efd;
+      border-radius: 50%;
+      animation: pulse-spin 0.8s linear infinite;
+    }
+    .loading-text {
+      margin-top: 20px;
+      font-size: 20px;
+      color: #0d6efd;
+      font-weight: bold;
+    }
+    @keyframes pulse-spin {
+      0% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(1.1) rotate(180deg); }
+      100% { transform: scale(1) rotate(360deg); }
+    }
   </style>
 </head>
 <body>
+  <!-- Loader overlay with spinner and descriptive text -->
+  <div id="loadingModal">
+    <div class="loader"></div>
+    <div class="loading-text">Updating stock data...</div>
+  </div>
+
   <nav class="navbar">
     <div class="left-block">
       <div class="logo">AI App</div>
@@ -138,6 +178,12 @@
               values.push(parseFloat(row.Close));
             }
           });
+
+          // If a chart already exists, destroy it so we can render a new chart.
+          if (myChartInstance) {
+            myChartInstance.destroy();
+          }
+
           const ctx = document.getElementById("myChart").getContext("2d");
           myChartInstance = new Chart(ctx, {
             type: "line",
@@ -147,28 +193,21 @@
                 label: "Close Price",
                 data: values,
                 borderColor: "rgba(75, 192, 192, 1)",
-                borderWidth: 4,     // Thicker line
-                tension: 0.4,       // Smooth (curved) line
-                pointRadius: 6,     // Bigger data points
-                // Fill the datapoints with color
+                borderWidth: 4,
+                tension: 0.4,
+                pointRadius: 6,
                 pointBackgroundColor: "rgba(75, 192, 192, 1)",
-                fill: false         // No fill under the line
+                fill: false
               }]
             },
             options: {
               responsive: true,
               scales: {
                 x: {
-                  title: {
-                    display: true,
-                    text: "Date"
-                  }
+                  title: { display: true, text: "Date" }
                 },
                 y: {
-                  title: {
-                    display: true,
-                    text: "Close Price"
-                  },
+                  title: { display: true, text: "Close Price" },
                   beginAtZero: false
                 }
               }
@@ -180,7 +219,6 @@
 
     // Load chart when a CSV file is selected
     document.getElementById("csvFileSelect").addEventListener("change", function(event) {
-      // Use the URL provided directly from the option value.
       const filePath = event.target.value;
       if (filePath) {
         document.getElementById("myChart").style.display = "block";
@@ -188,63 +226,30 @@
       }
     });
 
-    // Attach an event listener to the Update button for updating chart data.
+    // Update button event listener: show loader during data download/update
     document.getElementById("updateButton").addEventListener("click", function() {
+      const loader = document.getElementById("loadingModal");
+      loader.style.display = 'flex';  // Use flex to center the overlay content
+
+      const updateButton = document.getElementById("updateButton");
+      updateButton.disabled = true;
+
       fetch('/update', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          // Update existing chart if present
-          if (myChartInstance) {
-            myChartInstance.data.labels = data.labels;
-            myChartInstance.data.datasets[0].data = data.values;
-            // (Optional) update the point colors if needed:
-            myChartInstance.data.datasets[0].pointBackgroundColor = "rgba(75, 192, 192, 1)";
-            myChartInstance.update();
-          } else {
-            // Fallback: (optionally) create a new chart if one doesn't exist.
-            const ctx = document.getElementById("myChart").getContext("2d");
-            myChartInstance = new Chart(ctx, {
-              type: "line",
-              data: {
-                labels: data.labels,
-                datasets: [{
-                  label: "Close Price",
-                  data: data.values,
-                  borderColor: "rgba(75, 192, 192, 1)",
-                  borderWidth: 4,
-                  tension: 0.4,
-                  pointRadius: 6,
-                  pointBackgroundColor: "rgba(75, 192, 192, 1)",
-                  fill: false
-                }]
-              },
-              options: {
-                responsive: true,
-                scales: {
-                  x: {
-                    title: {
-                      display: true,
-                      text: "Date"
-                    }
-                  },
-                  y: {
-                    title: {
-                      display: true,
-                      text: "Close Price"
-                    },
-                    beginAtZero: false
-                  }
-                }
-              }
-            });
-          }
-        })
-        .catch(error => console.error('Error during update:', error));
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(response => response.json())
+      .then(data => {
+        loader.style.display = 'none';
+        updateButton.disabled = false;
+        console.log("Update response:", data);
+        // Optionally refresh any UI elements here (e.g., reload CSV options).
+      })
+      .catch(error => {
+        loader.style.display = 'none';
+        updateButton.disabled = false;
+        console.error('Error during update:', error);
+      });
     });
   </script>
 </body>

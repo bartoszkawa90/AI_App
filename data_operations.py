@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas as pd
 
 
-def download_stock_training_data(stock: str, file1: str, file2:str, period='3y', interval='1wk'):
+def download_stock_training_data(stock: str, file1: str, file2:str, period='3y', interval='1d'):
     """
     Function for downloading data about stock prices from last 3 years, function splits data into two
     chunks (training data and validation data), chunks are being saved into separated files
@@ -77,12 +77,13 @@ def get_stock_data_from_csv(file: str, column: str) -> dict:
     return data
 
 
-# ### TEST
-# if __name__ == '__main__':
-#     for idx, stock in enumerate(stocks[:3]):
-#         download_stock_data(stock[0], f"/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/"
-#                                  f"actions_data/train/train{idx}_{stock[1]}.csv",
-#                        f"/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/"
-#                        f"actions_data/verify/verify{idx}_{stock[1]}.csv")
-# 
-#     data = get_stock_data_from_csv('/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/actions_data/train/train0_Aon plc Class A.csv', 'Close')
+### TEST
+if __name__ == '__main__':
+    from list_of_actions import stocks
+    for idx, stock in enumerate(stocks[:3]):
+        download_stock_training_data(stock[0], f"/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/"
+                                 f"actions_data/train/train{idx}_{stock[1]}.csv",
+                       f"/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/"
+                       f"actions_data/verify/verify{idx}_{stock[1]}.csv")
+
+    data = get_stock_data_from_csv('/Users/bartoszkawa/Desktop/REPOS/GitHub/AI_App/AI_App/actions_data/train/train0_Aon plc Class A.csv', 'Close')

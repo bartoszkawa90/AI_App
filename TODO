@@ -10,3 +10,216 @@ Database - when will be some data to be stored
 UI - acording to app progress
 Scraping - NOW
 AI with Pytorch - Last Step
+
+
+
+
+
+MODEL DESCRIPTION
+
+Title: Detailed Explanation of the Stock Prediction Model Code
+
+This document provides a complete explanation of the code—from reading CSV files containing stock data to training and evaluating an LSTM model, as well as visualizing the results. The code applies a sliding window technique on normalized stock data, where each sample consists of a sequence of 20 rows (20 time steps, each with 20 features) and predicts the "Close" price for the next time step.
+
+------------------------------------
+1. Library Imports
+------------------------------------
+The code imports necessary libraries for file handling, data manipulation, deep learning with PyTorch, plotting with matplotlib, and data normalization with scikit-learn. The main libraries are:
+- os, glob, pandas, numpy: For file operations and data manipulation.
+- torch and its submodules: For defining the Dataset, creating an LSTM model, and training the model.
+- matplotlib: For generating plots to visualize model predictions.
+- scikit-learn's StandardScaler: For normalizing numerical data.
+
+------------------------------------
+2. Data Processing and Dataset Creation
+------------------------------------
+A custom class called "StockDataset" (subclassing PyTorch’s Dataset) is defined. Here’s what happens inside the class:
+
+- CSV File Loading and Preprocessing:
+  • The code reads each CSV file from a designated directory (e.g., "data/").
+  • Each CSV file is expected to contain around 500 rows with the following columns:
+      'Date', 'Close', 'High', 'Low', 'Open', 'Volume', 'MACD', 'CCI', 'ATR', 'BOLL', 'EMA20', 'MA5', 'MA10', 'MTM6', 'MTM12', 'ROC', 'SMI', 'WVAD', 'Exchange rate', 'Interest rate'
+  • The "Date" column is converted from a string (e.g., "2022-04-05") into a numerical timestamp using pd.to_datetime() and the .timestamp() method. This conversion is required so that the Date column can be normalized along with the other numeric features.
+
+- Concatenation and Column Selection:
+  • DataFrames from all CSV files are concatenated into one large DataFrame.
+  • The order of columns is enforced by selecting the 20 specified columns.
+  • The target variable for prediction is set to the "Close" column, which is also present in the features.
+
+- Normalization:
+  • The entire DataFrame (all 20 columns) is normalized using StandardScaler, which scales the features to have zero mean and unit variance.
+
+- Creating Sequences with a Sliding Window:
+  • A sliding window of fixed length (default is 20 time steps) is applied to create sequential data.
+  • Each sample is a 2D array with the shape (20, 20), where each row corresponds to one time step with 20 normalized features.
+  • The target for each sample is the "Close" value (column index 1 in the order) from the time step immediately following the window.
+  • The sequences and targets are stored as NumPy arrays and later converted into PyTorch tensors in the Dataset’s __getitem__ method.
+
+------------------------------------
+3. Model Definition – LSTM
+------------------------------------
+The LSTM model is defined in a class named "StockPriceLSTM", which extends nn.Module.
+
+- Model Architecture:
+  • The model uses an LSTM layer to process the input sequences. The LSTM is configured with:
+    - Input dimension = 20 (corresponding to the 20 features).
+    - Hidden dimension (e.g., 64 hidden units), and a specified number of layers (e.g., 2 layers), with dropout applied for regularization.
+  • The output from the LSTM (specifically the final hidden state from the last time step) is passed to a fully connected (dense) layer that maps it to a single output value, which is the predicted "Close" price.
+
+- Forward Pass:
+  • Hidden and cell states are initialized with zeros.
+  • The input sequence, of shape (batch_size, 20, 20), passes through the LSTM layers.
+  • The output at the last time step is then processed through the fully connected layer to produce the prediction.
+
+------------------------------------
+4. Main Script Workflow
+------------------------------------
+The main part of the script manages the workflow:
+
+- Locating CSV Files and Creating the Dataset:
+  • It uses glob to locate all CSV files in the "data/" directory.
+  • An instance of StockDataset is created using the designated sequence length (20).
+
+- Data Splitting and DataLoader Setup:
+  • The complete dataset is split into training (80%) and testing (20%) sets using PyTorch’s random_split.
+  • DataLoaders are created for both the training set and test set to facilitate batch processing during training and evaluation.
+
+- Model Instantiation and Setup:
+  • The code sets up the computation device (using GPU if available; otherwise, CPU).
+  • An instance of the LSTM model is created with input_dim = 20, hidden_dim (e.g., 64), num_layers (e.g., 2), and output_dim = 1.
+  • Mean Squared Error (MSE) is used as the loss function, and the Adam optimizer is chosen for model training.
+
+- Training Loop:
+  • The model is trained for a specified number of epochs (e.g., 50 epochs).
+  • During each epoch, for every batch from the training DataLoader:
+      - The model makes predictions on the input sequences.
+      - The MSE loss between predictions and true target values is calculated.
+      - Backpropagation is performed, and the optimizer updates the model parameters.
+  • The average training loss per epoch is printed for monitoring progress.
+
+- Evaluation:
+  • After training, the model switches to evaluation mode.
+  • Predictions are generated for the test set and compared with the actual target values.
+  • The overall test loss (MSE) is computed and printed.
+
+- Visualization:
+  • There are two plots created:
+      1. A plot comparing the predicted vs. actual normalized "Close" values over all test samples.
+      2. A detailed plot for a single sample from the test set, showing:
+           - The input sequence’s "Close" values over the 20 time steps.
+           - A horizontal line indicating the true target ("Close" value from the next time step).
+           - A horizontal line indicating the model’s predicted "Close" value.
+
+------------------------------------
+5. Detailed Diagram of the Data Flow
+------------------------------------
+Below is an ASCII diagram summarizing the complete data flow process:
+
+---------------------------------------------------------------------
+       ┌────────────────────────────┐
+       │         CSV Files          │
+       │  (Each file ~500 rows with │
+       │   20 columns, e.g., Date,   │
+       │ Close, High, Low, Open,     │
+       │ Volume, MACD, ... Interest  │
+       │           rate)            │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │     Read CSV Files         │
+       │  using Pandas (convert     │
+       │   'Date' to timestamp)     │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │   Data Preprocessing       │
+       │ - Concatenate DataFrames   │
+       │ - Select 20 specified cols │
+       │   (including 'Date', 'Close', etc.) │
+       │ - Set Target = 'Close'     │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │    Data Normalization      │
+       │ (Apply StandardScaler to   │
+       │ all 20 columns)            │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │   Sequence Creation        │
+       │ - Apply Sliding Window     │
+       │   (20 time steps per sample)│
+       │ - Input: (20 steps x 20     │
+       │   features)                │
+       │ - Target: Next row's 'Close'│
+       │   value (index 1)          │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │ PyTorch Dataset (StockDataset) │
+       │ (Stores sequences & targets)   │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │   DataLoader (Train/Test)  │
+       │ (Creates batches for training)│
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │   LSTM Model (PyTorch)     │
+       │ - Input: (batch, 20, 20)    │
+       │ - LSTM processes sequence  │
+       │ - FC layer outputs a single│
+       │   predicted value          │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │        Training            │
+       │ - Calculate MSE Loss       │
+       │ - Backpropagation & Optim. │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │       Evaluation           │
+       │ - Generate Predictions     │
+       │ - Compute Test MSE Loss    │
+       └─────────────┬──────────────┘
+                     │
+                     ▼
+       ┌────────────────────────────┐
+       │     Visualization          │
+       │ - Plot Predicted vs. Actual│
+       │ - Plot Sample Sequence &   │
+       │   its Target Values        │
+       └────────────────────────────┘
+---------------------------------------------------------------------
+
+------------------------------------
+6. Summary
+------------------------------------
+• CSV files containing stock data are read; the "Date" column is converted to numerical timestamps.
+• Data is then preprocessed:
+     - Files are concatenated.
+     - Only 20 specified columns are selected.
+     - The "Close" column is used as the target.
+• The entire dataset is normalized.
+• A sliding window creates sequences of 20 time steps, where each sample’s target is the normalized 'Close' value from the next time step.
+• An LSTM model processes these sequences:
+     - The LSTM captures the temporal dependencies.
+     - A fully connected layer outputs the predicted "Close" value.
+• The model is trained (using MSE loss with the Adam optimizer) and evaluated on a test set.
+• Finally, predictions and actual "Close" values are visualized with two plots:
+     - One plot compares all test predictions with actual values.
+     - Another plot shows a sample input sequence with its true and predicted next "Close" price.
+
+This concludes the detailed explanation along with the diagram of the entire process.
+

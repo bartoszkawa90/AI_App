@@ -23,7 +23,7 @@
       box-sizing: border-box;
       color: white;
     }
-    /* Left column containing app name and select box */
+    /* Left block in navbar: only contains logo and stock select */
     .left-block {
       display: flex;
       flex-direction: column;
@@ -33,9 +33,10 @@
       font-weight: bold;
       text-align: left;
     }
+    /* Container for CSV file selection */
     .select-container {
       margin-top: 5px;
-      align-self: flex-end;
+      align-self: flex-start;
     }
     .select-container label {
       margin-right: 10px;
@@ -51,7 +52,7 @@
       color: #333;
       cursor: pointer;
     }
-    /* Right column styling */
+    /* Right block in navbar: contains nav links and update button */
     .right-block {
       display: flex;
       align-items: center;
@@ -88,7 +89,43 @@
     .content {
       padding: 20px;
     }
-    /* Loader overlay styles: using Flexbox to center content */
+    /* Filter container below header holding date inputs and chart color select */
+    #filterContainer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    /* Date input container styling */
+    .date-input-container {
+      display: flex;
+      align-items: center;
+    }
+    .date-input-container label {
+      margin-right: 5px;
+      font-size: 16px;
+      /* Change from black to white with a slight text shadow for better visibility */
+      color: #FFF;
+      text-shadow: 1px 1px 2px #000;
+    }
+    .date-input-container input[type="date"] {
+      font-size: 16px;
+      padding: 5px;
+      margin-right: 10px;
+    }
+    /* Chart color select styling */
+    #chartColorContainer label {
+      font-size: 16px;
+      margin-right: 5px;
+      /* Make this label match the date label by changing to white with a text shadow */
+      color: #FFF;
+      text-shadow: 1px 1px 2px #000;
+    }
+    #chartColorSelect {
+      font-size: 16px;
+      padding: 8px 12px;
+    }
+    /* Loader overlay styles */
     #loadingModal {
       position: fixed;
       z-index: 1000;
@@ -96,13 +133,12 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(255, 255, 255, 0.9); /* slightly more opaque */
-      display: none; /* hidden by default */
+      background-color: rgba(255, 255, 255, 0.9);
+      display: none;
       align-items: center;
       justify-content: center;
       flex-direction: column;
     }
-    /* Improved spinner: bigger, thicker and faster */
     .loader {
       width: 80px;
       height: 80px;
@@ -125,15 +161,17 @@
   </style>
 </head>
 <body>
-  <!-- Loader overlay with spinner and descriptive text -->
+  <!-- Loader overlay -->
   <div id="loadingModal">
     <div class="loader"></div>
     <div class="loading-text">Updating stock data...</div>
   </div>
 
+  <!-- Navigation Bar -->
   <nav class="navbar">
     <div class="left-block">
       <div class="logo">AI App</div>
+      <!-- Stock select box -->
       <div class="select-container">
         <label for="csvFileSelect">Choose stock:</label>
         <select id="csvFileSelect">
@@ -155,85 +193,169 @@
     </div>
   </nav>
 
+  <!-- Main Content -->
   <main class="content">
     <h1>Welcome to MyWebApp</h1>
-    <p>This is a simple web application interface with a navigation bar.</p>
+    <!-- Filter container below header -->
+    <div id="filterContainer">
+      <!-- Date inputs container on the left -->
+      <div class="date-input-container">
+        <label for="startDate">Start Date:</label>
+        <input type="date" id="startDate" />
+        <label for="endDate">End Date:</label>
+        <input type="date" id="endDate" />
+      </div>
+      <!-- Chart color select on the right -->
+      <div id="chartColorContainer">
+        <label for="chartColorSelect">Select Chart Color:</label>
+        <select id="chartColorSelect">
+          <option value="rgba(75, 192, 192, 1)" style="background-color: rgba(75, 192, 192, 1); color: #FFF;">■ Teal</option>
+          <option value="rgba(255, 99, 132, 1)" style="background-color: rgba(255, 99, 132, 1); color: #FFF;">■ Red</option>
+          <option value="rgba(54, 162, 235, 1)" style="background-color: rgba(54, 162, 235, 1); color: #FFF;">■ Blue</option>
+          <option value="rgba(255, 205, 86, 1)" style="background-color: rgba(255, 205, 86, 1); color: #000;">■ Yellow</option>
+          <option value="rgba(75, 0, 130, 1)" style="background-color: rgba(75, 0, 130, 1); color: #FFF;">■ Indigo</option>
+          <option value="rgba(0, 128, 0, 1)" style="background-color: rgba(0, 128, 0, 1); color: #FFF;">■ Green</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Chart Canvas -->
     <canvas id="myChart" width="300" height="120"></canvas>
   </main>
 
   <script>
-    // Declare a global variable to hold the chart instance.
+    // Global variables to hold the chart instance and CSV data.
     let myChartInstance = null;
+    let globalCsvData = [];
 
+    // Parse CSV, store data, and render chart based on the selected date range.
     function loadCSVAndRenderChart(filePath) {
       Papa.parse(filePath, {
         download: true,
         header: true,
         complete: function(results) {
-          const labels = [];
-          const values = [];
-          results.data.forEach((row) => {
-            if (row.Date && row.Close) {
-              labels.push(row.Date);
-              values.push(parseFloat(row.Close));
-            }
-          });
-
-          // If a chart already exists, destroy it so we can render a new chart.
-          if (myChartInstance) {
-            myChartInstance.destroy();
-          }
-
-          const ctx = document.getElementById("myChart").getContext("2d");
-          myChartInstance = new Chart(ctx, {
-            type: "line",
-            data: {
-              labels: labels,
-              datasets: [{
-                label: "Close Price",
-                data: values,
-                borderColor: "rgba(75, 192, 192, 1)",
-                borderWidth: 4,
-                tension: 0.4,
-                pointRadius: 6,
-                pointBackgroundColor: "rgba(75, 192, 192, 1)",
-                fill: false
-              }]
-            },
-            options: {
-              responsive: true,
-              scales: {
-                x: {
-                  title: { display: true, text: "Date" }
-                },
-                y: {
-                  title: { display: true, text: "Close Price" },
-                  beginAtZero: false
-                }
-              }
-            }
-          });
+          globalCsvData = results.data;
+          document.getElementById("myChart").style.display = "block";
+          renderChartFromData();
         }
       });
     }
 
-    // Load chart when a CSV file is selected
+    // Build and render the chart using the filtered CSV data.
+    function renderChartFromData() {
+      const startDateInput = document.getElementById("startDate").value;
+      const endDateInput = document.getElementById("endDate").value;
+      const labels = [];
+      const values = [];
+
+      globalCsvData.forEach(row => {
+        if (row.Date && row.Close) {
+          const rowDate = new Date(row.Date);
+          if (startDateInput) {
+            const startDate = new Date(startDateInput);
+            if (rowDate < startDate) return;
+          }
+          if (endDateInput) {
+            const endDate = new Date(endDateInput);
+            if (rowDate > endDate) return;
+          }
+          labels.push(row.Date);
+          values.push(parseFloat(row.Close));
+        }
+      });
+
+      // Get the currently selected color from the chart color select.
+      const colorSelect = document.getElementById("chartColorSelect");
+      const selectedColor = colorSelect ? colorSelect.value : "rgba(75, 192, 192, 1)";
+
+      // Destroy existing chart if present.
+      if (myChartInstance) {
+        myChartInstance.destroy();
+      }
+
+      const ctx = document.getElementById("myChart").getContext("2d");
+      myChartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Close Price",
+            data: values,
+            borderColor: selectedColor,
+            borderWidth: 4,
+            tension: 0.4,
+            pointRadius: 6,
+            pointBackgroundColor: selectedColor,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: "Date",
+                color: "#000",
+                font: {
+                  size: 18,
+                  weight: "bold"
+                }
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: "Close Price",
+                color: "#000",
+                font: {
+                  size: 18,
+                  weight: "bold"
+                }
+              },
+              beginAtZero: false
+            }
+          }
+        }
+      });
+    }
+
+    // Load chart when a CSV file is selected.
     document.getElementById("csvFileSelect").addEventListener("change", function(event) {
       const filePath = event.target.value;
       if (filePath) {
-        document.getElementById("myChart").style.display = "block";
         loadCSVAndRenderChart(filePath);
       }
     });
 
-    // Update button event listener: show loader during data download/update
+    // Update chart when start or end date changes.
+    document.getElementById("startDate").addEventListener("change", function() {
+      if (globalCsvData && globalCsvData.length > 0) {
+        renderChartFromData();
+      }
+    });
+    document.getElementById("endDate").addEventListener("change", function() {
+      if (globalCsvData && globalCsvData.length > 0) {
+        renderChartFromData();
+      }
+    });
+
+    // Update chart when color select changes.
+    document.getElementById("chartColorSelect").addEventListener("change", function(e) {
+      const newColor = e.target.value;
+      if (myChartInstance) {
+        myChartInstance.data.datasets[0].borderColor = newColor;
+        myChartInstance.data.datasets[0].pointBackgroundColor = newColor;
+        myChartInstance.update();
+      }
+    });
+
+    // Update button functionality remains unchanged.
     document.getElementById("updateButton").addEventListener("click", function() {
       const loader = document.getElementById("loadingModal");
-      loader.style.display = 'flex';  // Use flex to center the overlay content
-
+      loader.style.display = 'flex';
       const updateButton = document.getElementById("updateButton");
       updateButton.disabled = true;
-
       fetch('/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -243,7 +365,6 @@
         loader.style.display = 'none';
         updateButton.disabled = false;
         console.log("Update response:", data);
-        // Optionally refresh any UI elements here (e.g., reload CSV options).
       })
       .catch(error => {
         loader.style.display = 'none';

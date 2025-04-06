@@ -1,17 +1,17 @@
 import torch
 import pandas as pd
 import numpy as np
-from torch.nn as nn
+from torch import nn
 import os
 
 
 """ Used :
-        https://www.mdpi.com/2079-3197/13/1/3    
-        Especially CNN + GRU model
+            https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0310296
+            Downloaded to current dir
 """
 
 
-class CNNPlusGRU(nn.Model):
+class DJIA_Net(nn.Model):
     def __init__(self, input_size: int, hidden_size: int, output_size: int):
 
 
@@ -19,4 +19,4 @@ class CNNPlusGRU(nn.Model):
 
 
 if __name__ == "__main__":
-    net = Net()
+    net = DJIA_Net()

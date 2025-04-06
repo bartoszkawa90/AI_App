@@ -125,6 +125,10 @@
       font-size: 16px;
       padding: 8px 12px;
     }
+    #chartDataSelect {
+      font-size: 16px;
+      padding: 8px 12px;
+    }
     /* Loader overlay styles */
     #loadingModal {
       position: fixed;
@@ -209,12 +213,19 @@
       <div id="chartColorContainer">
         <label for="chartColorSelect">Select Chart Color:</label>
         <select id="chartColorSelect">
-          <option value="rgba(75, 192, 192, 1)" style="background-color: rgba(75, 192, 192, 1); color: #FFF;">■ Teal</option>
-          <option value="rgba(255, 99, 132, 1)" style="background-color: rgba(255, 99, 132, 1); color: #FFF;">■ Red</option>
-          <option value="rgba(54, 162, 235, 1)" style="background-color: rgba(54, 162, 235, 1); color: #FFF;">■ Blue</option>
-          <option value="rgba(255, 205, 86, 1)" style="background-color: rgba(255, 205, 86, 1); color: #000;">■ Yellow</option>
-          <option value="rgba(75, 0, 130, 1)" style="background-color: rgba(75, 0, 130, 1); color: #FFF;">■ Indigo</option>
-          <option value="rgba(0, 128, 0, 1)" style="background-color: rgba(0, 128, 0, 1); color: #FFF;">■ Green</option>
+          <option value="rgba(75, 192, 192, 1)" style="background-color: rgba(75, 192, 192, 1); color: #FFF;"> 🟦 Teal</option>
+          <option value="rgba(255, 99, 132, 1)" style="background-color: rgba(255, 99, 132, 1); color: #FFF;">🟥 Red</option>
+          <option value="rgba(54, 162, 235, 1)" style="background-color: rgba(54, 162, 235, 1); color: #FFF;">🟦 Blue</option>
+          <option value="rgba(255, 205, 86, 1)" style="background-color: rgba(255, 205, 86, 1); color: #000;">🟨 Yellow</option>
+          <option value="rgba(75, 0, 130, 1)" style="background-color: rgba(75, 0, 130, 1); color: #FFF;">🟪 Indigo</option>
+          <option value="rgba(0, 128, 0, 1)" style="background-color: rgba(0, 128, 0, 1); color: #FFF;">🟩 Green</option>
+        </select>
+        <label for="chartDataSelect">Select Chart Color:</label>
+        <select id="chartDataSelect">
+          <option>Close</option>
+          <option>High</option>
+          <option>Low</option>
+          <option>Open</option>
         </select>
       </div>
     </div>
@@ -223,155 +234,177 @@
     <canvas id="myChart" width="300" height="120"></canvas>
   </main>
 
-  <script>
-    // Global variables to hold the chart instance and CSV data.
-    let myChartInstance = null;
-    let globalCsvData = [];
+<script>
+  // Global variables to hold the chart instance and CSV data.
+  let myChartInstance = null;
+  let globalCsvData = [];
 
-    // Parse CSV, store data, and render chart based on the selected date range.
-    function loadCSVAndRenderChart(filePath) {
-      Papa.parse(filePath, {
-        download: true,
-        header: true,
-        complete: function(results) {
-          globalCsvData = results.data;
-          document.getElementById("myChart").style.display = "block";
-          renderChartFromData();
+  // Parse CSV, store data, and render chart based on the selected date range.
+  function loadCSVAndRenderChart(filePath) {
+    Papa.parse(filePath, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        globalCsvData = results.data;
+        document.getElementById("myChart").style.display = "block";
+        renderChartFromData();
+      }
+    });
+  }
+
+  // Build and render the chart using the filtered CSV data.
+  function renderChartFromData() {
+    const startDateInput = document.getElementById("startDate").value;
+    const endDateInput = document.getElementById("endDate").value;
+    // Get the data column from the select box.
+    const dataColumn = document.getElementById("chartDataSelect").value;
+    const labels = [];
+    const values = [];
+
+    globalCsvData.forEach(row => {
+      if (row.Date && row[dataColumn]) {
+        const rowDate = new Date(row.Date);
+        if (startDateInput) {
+          const startDate = new Date(startDateInput);
+          if (rowDate < startDate) return;
         }
-      });
+        if (endDateInput) {
+          const endDate = new Date(endDateInput);
+          if (rowDate > endDate) return;
+        }
+        labels.push(row.Date);
+        values.push(parseFloat(row[dataColumn]));
+      }
+    });
+
+    // Get the currently selected color from the chart color select.
+    const colorSelect = document.getElementById("chartColorSelect");
+    const selectedColor = colorSelect ? colorSelect.value : "rgba(75, 192, 192, 1)";
+
+    // Destroy existing chart if present.
+    if (myChartInstance) {
+      myChartInstance.destroy();
     }
 
-    // Build and render the chart using the filtered CSV data.
-    function renderChartFromData() {
-      const startDateInput = document.getElementById("startDate").value;
-      const endDateInput = document.getElementById("endDate").value;
-      const labels = [];
-      const values = [];
-
-      globalCsvData.forEach(row => {
-        if (row.Date && row.Close) {
-          const rowDate = new Date(row.Date);
-          if (startDateInput) {
-            const startDate = new Date(startDateInput);
-            if (rowDate < startDate) return;
-          }
-          if (endDateInput) {
-            const endDate = new Date(endDateInput);
-            if (rowDate > endDate) return;
-          }
-          labels.push(row.Date);
-          values.push(parseFloat(row.Close));
-        }
-      });
-
-      // Get the currently selected color from the chart color select.
-      const colorSelect = document.getElementById("chartColorSelect");
-      const selectedColor = colorSelect ? colorSelect.value : "rgba(75, 192, 192, 1)";
-
-      // Destroy existing chart if present.
-      if (myChartInstance) {
-        myChartInstance.destroy();
-      }
-
-      const ctx = document.getElementById("myChart").getContext("2d");
-      myChartInstance = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: labels,
-          datasets: [{
-            label: "Close Price",
-            data: values,
-            borderColor: selectedColor,
-            borderWidth: 4,
-            tension: 0.4,
-            pointRadius: 6,
-            pointBackgroundColor: selectedColor,
-            fill: false
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: "Date",
-                color: "#000",
-                font: {
-                  size: 18,
-                  weight: "bold"
-                }
+    const ctx = document.getElementById("myChart").getContext("2d");
+    myChartInstance = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          // Use the selected data column as the label.
+          label: dataColumn,
+          data: values,
+          borderColor: selectedColor,
+          borderWidth: 4,
+          tension: 0.4,
+          // Dynamic point radius scales with the canvas width.
+          pointRadius: function(context) {
+            const chartWidth = context.chart.width;
+            const baseWidth = 1920; // Reference width for maximum radius.
+            const maxRadius = 6;    // Maximum point radius.
+            const minRadius = 2;    // Minimum point radius for very small charts.
+            const factor = chartWidth / baseWidth;
+            const computed = maxRadius * factor;
+            // Clamp the value between minRadius and maxRadius.
+            return Math.min(Math.max(computed, minRadius), maxRadius);
+          },
+          pointBackgroundColor: selectedColor,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: "Date",
+              color: "#000",
+              font: {
+                size: 18,
+                weight: "bold"
+              }
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              // A generic title for the Y-axis; you can update this as needed.
+              text: "Value",
+              color: "#000",
+              font: {
+                size: 18,
+                weight: "bold"
               }
             },
-            y: {
-              title: {
-                display: true,
-                text: "Close Price",
-                color: "#000",
-                font: {
-                  size: 18,
-                  weight: "bold"
-                }
-              },
-              beginAtZero: false
-            }
+            beginAtZero: false
           }
         }
-      });
+      }
+    });
+  }
+
+  // Load chart when a CSV file is selected.
+  document.getElementById("csvFileSelect").addEventListener("change", function(event) {
+    const filePath = event.target.value;
+    if (filePath) {
+      loadCSVAndRenderChart(filePath);
     }
+  });
 
-    // Load chart when a CSV file is selected.
-    document.getElementById("csvFileSelect").addEventListener("change", function(event) {
-      const filePath = event.target.value;
-      if (filePath) {
-        loadCSVAndRenderChart(filePath);
-      }
-    });
+  // Update chart when start or end date changes.
+  document.getElementById("startDate").addEventListener("change", function() {
+    if (globalCsvData && globalCsvData.length > 0) {
+      renderChartFromData();
+    }
+  });
+  document.getElementById("endDate").addEventListener("change", function() {
+    if (globalCsvData && globalCsvData.length > 0) {
+      renderChartFromData();
+    }
+  });
 
-    // Update chart when start or end date changes.
-    document.getElementById("startDate").addEventListener("change", function() {
-      if (globalCsvData && globalCsvData.length > 0) {
-        renderChartFromData();
-      }
-    });
-    document.getElementById("endDate").addEventListener("change", function() {
-      if (globalCsvData && globalCsvData.length > 0) {
-        renderChartFromData();
-      }
-    });
+  // Update chart when the selected data column changes.
+  document.getElementById("chartDataSelect").addEventListener("change", function() {
+    if (globalCsvData && globalCsvData.length > 0) {
+      renderChartFromData();
+    }
+  });
 
-    // Update chart when color select changes.
-    document.getElementById("chartColorSelect").addEventListener("change", function(e) {
-      const newColor = e.target.value;
-      if (myChartInstance) {
-        myChartInstance.data.datasets[0].borderColor = newColor;
-        myChartInstance.data.datasets[0].pointBackgroundColor = newColor;
-        myChartInstance.update();
-      }
-    });
+  // Update chart when color select changes.
+  document.getElementById("chartColorSelect").addEventListener("change", function(e) {
+    const newColor = e.target.value;
+    if (myChartInstance) {
+      myChartInstance.data.datasets[0].borderColor = newColor;
+      myChartInstance.data.datasets[0].pointBackgroundColor = newColor;
+      myChartInstance.update();
+    }
+  });
 
-    // Update button functionality remains unchanged.
-    document.getElementById("updateButton").addEventListener("click", function() {
-      const loader = document.getElementById("loadingModal");
-      loader.style.display = 'flex';
-      const updateButton = document.getElementById("updateButton");
-      updateButton.disabled = true;
-      fetch('/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(response => response.json())
-      .then(data => {
-        loader.style.display = 'none';
-        updateButton.disabled = false;
-        console.log("Update response:", data);
-      })
-      .catch(error => {
-        loader.style.display = 'none';
-        updateButton.disabled = false;
-        console.error('Error during update:', error);
-      });
+  // Update button functionality remains unchanged.
+  document.getElementById("updateButton").addEventListener("click", function() {
+    const loader = document.getElementById("loadingModal");
+    loader.style.display = 'flex';
+    const updateButton = document.getElementById("updateButton");
+    updateButton.disabled = true;
+    fetch('/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+      loader.style.display = 'none';
+      updateButton.disabled = false;
+      console.log("Update response:", data);
+    })
+    .catch(error => {
+      loader.style.display = 'none';
+      updateButton.disabled = false;
+      console.error('Error during update:', error);
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>

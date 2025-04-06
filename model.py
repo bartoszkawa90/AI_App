@@ -13,9 +13,10 @@ import os
 
 class DJIA_Net(nn.Model):
     def __init__(self, input_size: int, hidden_size: int, output_size: int):
-
+        pass
 
     def forward(self):
+        pass
 
 
 if __name__ == "__main__":
